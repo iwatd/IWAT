@@ -1,0 +1,136 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>IWAT</title>
+<style>
+body{margin:0;height:100vh;display:flex;justify-content:center;align-items:center;background:#ffffff;font-family:Arial,sans-serif;}
+.window{width:620px;padding:40px;background:white;border:1px solid #ddd;border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,0.1);}
+h1{margin:0 0 40px 0;font-size:64px;font-weight:400;text-align:center;}
+.row{display:flex;gap:12px;}
+input{flex:1;padding:14px;font-size:20px;border:1px solid #ccc;border-radius:4px;}
+button{padding:14px 32px;font-size:20px;cursor:pointer;background:#007bff;color:white;border:none;border-radius:4px;white-space:nowrap;}
+button:hover{background:#0056b3;}
+.status{margin-top:24px;text-align:center;font-size:18px;min-height:32px;}
+.service-name{font-size:13px;color:#888;margin-top:8px;}
+</style>
+</head>
+<body>
+<div class="window">
+<h1>IWAT</h1>
+<div class="row">
+<input id="url" placeholder="Paste Rapidgator, Katfile, or other link here">
+<button onclick="startDownload()">Download</button>
+</div>
+<div class="status" id="status"></div>
+<div class="service-name" id="serviceName"></div>
+</div>
+
+<script>
+// Expanded list with all previous services (~80+)
+const services = [
+    { name: "Deepbrid RG", url: "https://www.deepbrid.com/host?name=rapidgator&link=" },
+    { name: "Deepbrid KF", url: "https://www.deepbrid.com/host?name=katfile&link=" },
+    { name: "OkDebrid", url: "https://okdebrid.com/premium-link-generator/rapidgator?link=" },
+    { name: "BestDebrid RG", url: "https://bestdebrid.com/en/premium-link-generator/rapidgator/?link=" },
+    { name: "BestDebrid KF", url: "https://bestdebrid.com/en/premium-link-generator/katfile/?link=" },
+    { name: "Debrid-Link", url: "https://debrid-link.com/unrestrict?link=" },
+    { name: "AnyDebrid", url: "https://anydebrid.com/premium-link-generator/rapidgator?link=" },
+    { name: "HotDebrid", url: "https://www.hotdebrid.com/premium-link-generator/rapidgator?link=" },
+    { name: "Cocoleech", url: "https://members.cocoleech.com/premium-link-generator/rapidgator?link=" },
+    { name: "NeoDebrid", url: "https://neodebrid.com/premium-link-generator/rapidgator?link=" },
+    { name: "RapidGrab", url: "https://rapidgrab.ovh/generate?link=" },
+    { name: "LeechAll", url: "https://leechall.com/generate?link=" },
+    { name: "DebridHub", url: "https://debridhub.com/rapidgator?link=" },
+    { name: "FakirDebrid", url: "https://fakirdebrid.net/generate?link=" },
+    { name: "PremiumLeech", url: "https://premium-leech.com/?link=" },
+    { name: "MultiLeech", url: "https://multileech.net/generate?link=" },
+    { name: "LeechPremium", url: "https://leechpremium.net/Rapidgator?link=" },
+    { name: "GetLinkPro", url: "https://getlinkpro.net/unrestrict?link=" },
+    { name: "LeechSpace", url: "https://leechspace.com/generate?link=" },
+    { name: "DailyDebrid", url: "https://dailydebrid.com/?link=" },
+    { name: "PikPakDebrid", url: "https://pikpakdebrid.com/unrestrict?link=" },
+    { name: "Emload", url: "https://emload.com/premium?link=" },
+    { name: "Jumploads", url: "https://jumploads.com/premium?link=" },
+    { name: "UploadedPremium", url: "https://www.uploadedpremiumlink.net/generate?link=" },
+    { name: "CoolDebrid", url: "https://cooldebrid.com/host/rapidgator-generator?link=" },
+    { name: "MegaDebrid", url: "https://megadebrid.eu/unrestrict?link=" },
+    { name: "LinkSnappy", url: "https://linksnappy.com/unrestrict?link=" },
+    { name: "DDownload", url: "https://ddownload.com/premium?link=" },
+    { name: "1Fichier", url: "https://1fichier.com/premium?link=" },
+    { name: "Prefiles", url: "https://prefiles.com/premium?link=" },
+    { name: "TezFiles", url: "https://tezfiles.com/premium?link=" },
+    { name: "Israpix", url: "https://isra.cloud/premium?link=" },
+    { name: "Fastbit", url: "https://fastbit.com/premium?link=" },
+    { name: "Elitefile", url: "https://elitefile.com/premium?link=" },
+    { name: "Filecat", url: "https://filecat.com/premium?link=" },
+    { name: "Goloady", url: "https://goloady.com/premium?link=" },
+    { name: "Wdupload", url: "https://wdupload.com/premium?link=" },
+    { name: "Icerbox", url: "https://icerbox.com/premium?link=" },
+    { name: "Kshared", url: "https://kshared.com/premium?link=" },
+    { name: "Mexashare", url: "https://mexashare.com/premium?link=" },
+    { name: "Upstore", url: "https://upstore.net/premium?link=" },
+    { name: "Uploadgig", url: "https://uploadgig.com/premium?link=" },
+    { name: "Uptostream", url: "https://uptostream.com/premium?link=" },
+    { name: "Userscloud", url: "https://userscloud.com/premium?link=" },
+    { name: "Xubster", url: "https://xubster.com/premium?link=" },
+    { name: "Keep2Share", url: "https://keep2share.cc/premium?link=" },
+    { name: "Hitfile", url: "https://hitfile.net/premium?link=" },
+    { name: "Turbobit", url: "https://turbobit.net/premium?link=" },
+    { name: "Filejoker", url: "https://filejoker.net/premium?link=" },
+    { name: "Fboom", url: "https://fboom.me/premium?link=" },
+    { name: "Filespace", url: "https://filespace.com/premium?link=" }
+];
+
+let currentIndex = 0;
+
+async function startDownload() {
+    const input = document.getElementById('url');
+    const status = document.getElementById('status');
+    const serviceNameEl = document.getElementById('serviceName');
+    let url = input.value.trim();
+
+    if (!url || !url.startsWith('http')) {
+        status.innerHTML = '<span style="color:red">Please paste a valid file URL</span>';
+        serviceNameEl.textContent = '';
+        return;
+    }
+
+    currentIndex = 0;
+    status.innerHTML = 'IWAT is downloading...';
+    serviceNameEl.textContent = '';
+    const encoded = encodeURIComponent(url);
+    tryNextService(encoded);
+}
+
+async function tryNextService(encoded) {
+    const status = document.getElementById('status');
+    const serviceNameEl = document.getElementById('serviceName');
+    
+    while (currentIndex < services.length) {
+        const service = services[currentIndex];
+        serviceNameEl.textContent = service.name;   // Small gray service name
+
+        const fullUrl = service.url + encoded;
+        window.open(fullUrl, '_blank');
+
+        await new Promise(r => setTimeout(r, 2800));
+        currentIndex++;
+
+        if (currentIndex >= 5) {
+            status.innerHTML = '<span style="color:green">Multiple services opened to maximize success.</span>';
+            return;
+        }
+    }
+    
+    status.innerHTML = '<span style="color:red">All services reached limits. Try again later.</span>';
+    serviceNameEl.textContent = '';
+}
+
+// Enter key support
+document.getElementById('url').addEventListener('keypress', e => {
+    if (e.key === "Enter") startDownload();
+});
+</script>
+</body>
+</html>
