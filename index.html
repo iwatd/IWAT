@@ -2,32 +2,134 @@
 <html>
 <head>
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>IWAT</title>
 <style>
-body{margin:0;height:100vh;display:flex;justify-content:center;align-items:center;background:#ffffff;font-family:Arial,sans-serif;}
-.window{width:620px;padding:40px;background:white;border:1px solid #ddd;border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,0.1);}
-h1{margin:0 0 40px 0;font-size:64px;font-weight:400;text-align:center;}
-.row{display:flex;gap:12px;}
-input{flex:1;padding:14px;font-size:20px;border:1px solid #ccc;border-radius:4px;}
-button{padding:14px 32px;font-size:20px;cursor:pointer;background:#007bff;color:white;border:none;border-radius:4px;white-space:nowrap;}
-button:hover{background:#0056b3;}
-.status{margin-top:24px;text-align:center;font-size:18px;min-height:32px;}
-.service-name{font-size:13px;color:#888;margin-top:8px;}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    margin: 0;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: #ffffff;
+    font-family: Arial, sans-serif;
+}
+
+.window {
+    width: 620px;
+    padding: 40px;
+    text-align: center;
+}
+
+h1 {
+    margin: 0 0 40px 0;
+    font-size: 64px;
+    font-weight: 400;
+    text-align: center;
+}
+
+.row {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 8px;
+}
+
+input {
+    flex: 1;
+    padding: 14px;
+    font-size: 20px;
+    border: none;
+    border-bottom: 2px solid #ccc;
+    outline: none;
+    background: transparent;
+    transition: border-color 0.2s;
+}
+
+input:focus {
+    border-bottom-color: #007bff;
+}
+
+input::placeholder {
+    color: #aaa;
+}
+
+button {
+    padding: 14px 32px;
+    font-size: 20px;
+    cursor: pointer;
+    background: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    white-space: nowrap;
+}
+
+button:hover {
+    background: #0056b3;
+}
+
+button:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+}
+
+.status {
+    margin-top: 24px;
+    text-align: center;
+    font-size: 18px;
+    min-height: 32px;
+}
+
+.service-name {
+    font-size: 13px;
+    color: #888;
+    margin-top: 8px;
+    text-align: center;
+}
+
+.online-counter {
+    font-size: 12px;
+    color: #aaa;
+    text-align: center;
+    margin-top: 16px;
+}
+
+.online-dot {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    background: #22c55e;
+    border-radius: 50%;
+    margin-right: 5px;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.4; }
+    100% { opacity: 1; }
+}
 </style>
 </head>
 <body>
 <div class="window">
-<h1>IWAT</h1>
-<div class="row">
-<input id="url" placeholder="Paste Rapidgator, Katfile, or other link here">
-<button onclick="startDownload()">Download</button>
-</div>
-<div class="status" id="status"></div>
-<div class="service-name" id="serviceName"></div>
+    <h1>IWAT</h1>
+    <div class="row">
+        <input id="url" placeholder="Paste Rapidgator, Katfile, or other link here">
+        <button id="dlBtn" onclick="startDownload()">Download</button>
+    </div>
+    <div class="status" id="status"></div>
+    <div class="service-name" id="serviceName"></div>
+    <div class="online-counter" id="onlineCounter">
+        <span class="online-dot"></span><span id="onlineText">Connecting...</span>
+    </div>
 </div>
 
+<!-- Pusher for real live counter -->
+<script src="https://js.pusher.com/8.2.0/pusher.min.js"></script>
 <script>
-// Full list of services (from previous versions)
 const services = [
     { name: "Deepbrid RG", url: "https://www.deepbrid.com/host?name=rapidgator&link=" },
     { name: "Deepbrid KF", url: "https://www.deepbrid.com/host?name=katfile&link=" },
@@ -77,10 +179,11 @@ const services = [
 
 let currentIndex = 0;
 
-async function startDownload() {
+function startDownload() {
     const input = document.getElementById('url');
     const status = document.getElementById('status');
     const serviceNameEl = document.getElementById('serviceName');
+    const btn = document.getElementById('dlBtn');
     let url = input.value.trim();
 
     if (!url || !url.startsWith('http')) {
@@ -89,25 +192,49 @@ async function startDownload() {
         return;
     }
 
-    // Pick one service per paste (cycles through the list)
     const service = services[currentIndex % services.length];
     currentIndex++;
 
     status.innerHTML = 'IWAT is downloading...';
     serviceNameEl.textContent = service.name;
+    btn.disabled = true;
 
     const encoded = encodeURIComponent(url);
     const fullUrl = service.url + encoded;
 
-    // Open the selected service
     window.open(fullUrl, '_blank');
 
     setTimeout(() => {
         status.innerHTML = '<span style="color:green">Service opened successfully.<br>Check the new tab for the file.</span>';
+        btn.disabled = false;
     }, 1800);
 }
 
-// Enter key support
+// Real live counter using Pusher public presence channel
+const pusher = new Pusher('d05e9f48c0a7f1babd37', {
+    cluster: 'eu',
+    forceTLS: true
+});
+
+const channel = pusher.subscribe('presence-iwat-live');
+
+channel.bind('pusher:subscription_succeeded', function(members) {
+    updateCount(members.count);
+});
+
+channel.bind('pusher:member_added', function(member) {
+    updateCount(channel.members.count);
+});
+
+channel.bind('pusher:member_removed', function(member) {
+    updateCount(channel.members.count);
+});
+
+function updateCount(n) {
+    const text = n === 1 ? '1 person using IWAT right now' : n + ' people using IWAT right now';
+    document.getElementById('onlineText').textContent = text;
+}
+
 document.getElementById('url').addEventListener('keypress', e => {
     if (e.key === "Enter") startDownload();
 });
