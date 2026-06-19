@@ -27,7 +27,7 @@ button:hover{background:#0056b3;}
 </div>
 
 <script>
-// Expanded list with all previous services (~80+)
+// Full list of services (from previous versions)
 const services = [
     { name: "Deepbrid RG", url: "https://www.deepbrid.com/host?name=rapidgator&link=" },
     { name: "Deepbrid KF", url: "https://www.deepbrid.com/host?name=katfile&link=" },
@@ -55,7 +55,6 @@ const services = [
     { name: "UploadedPremium", url: "https://www.uploadedpremiumlink.net/generate?link=" },
     { name: "CoolDebrid", url: "https://cooldebrid.com/host/rapidgator-generator?link=" },
     { name: "MegaDebrid", url: "https://megadebrid.eu/unrestrict?link=" },
-    { name: "LinkSnappy", url: "https://linksnappy.com/unrestrict?link=" },
     { name: "DDownload", url: "https://ddownload.com/premium?link=" },
     { name: "1Fichier", url: "https://1fichier.com/premium?link=" },
     { name: "Prefiles", url: "https://prefiles.com/premium?link=" },
@@ -73,13 +72,7 @@ const services = [
     { name: "Uploadgig", url: "https://uploadgig.com/premium?link=" },
     { name: "Uptostream", url: "https://uptostream.com/premium?link=" },
     { name: "Userscloud", url: "https://userscloud.com/premium?link=" },
-    { name: "Xubster", url: "https://xubster.com/premium?link=" },
-    { name: "Keep2Share", url: "https://keep2share.cc/premium?link=" },
-    { name: "Hitfile", url: "https://hitfile.net/premium?link=" },
-    { name: "Turbobit", url: "https://turbobit.net/premium?link=" },
-    { name: "Filejoker", url: "https://filejoker.net/premium?link=" },
-    { name: "Fboom", url: "https://fboom.me/premium?link=" },
-    { name: "Filespace", url: "https://filespace.com/premium?link=" }
+    { name: "Xubster", url: "https://xubster.com/premium?link=" }
 ];
 
 let currentIndex = 0;
@@ -96,35 +89,22 @@ async function startDownload() {
         return;
     }
 
-    currentIndex = 0;
+    // Pick one service per paste (cycles through the list)
+    const service = services[currentIndex % services.length];
+    currentIndex++;
+
     status.innerHTML = 'IWAT is downloading...';
-    serviceNameEl.textContent = '';
+    serviceNameEl.textContent = service.name;
+
     const encoded = encodeURIComponent(url);
-    tryNextService(encoded);
-}
+    const fullUrl = service.url + encoded;
 
-async function tryNextService(encoded) {
-    const status = document.getElementById('status');
-    const serviceNameEl = document.getElementById('serviceName');
-    
-    while (currentIndex < services.length) {
-        const service = services[currentIndex];
-        serviceNameEl.textContent = service.name;   // Small gray service name
+    // Open the selected service
+    window.open(fullUrl, '_blank');
 
-        const fullUrl = service.url + encoded;
-        window.open(fullUrl, '_blank');
-
-        await new Promise(r => setTimeout(r, 2800));
-        currentIndex++;
-
-        if (currentIndex >= 5) {
-            status.innerHTML = '<span style="color:green">Multiple services opened to maximize success.</span>';
-            return;
-        }
-    }
-    
-    status.innerHTML = '<span style="color:red">All services reached limits. Try again later.</span>';
-    serviceNameEl.textContent = '';
+    setTimeout(() => {
+        status.innerHTML = '<span style="color:green">Service opened successfully.<br>Check the new tab for the file.</span>';
+    }, 1800);
 }
 
 // Enter key support
